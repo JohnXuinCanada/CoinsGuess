@@ -1,0 +1,1473 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>双人猜硬币游戏</title>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Noto+Sans+SC:wght@400;500;700;900&family=Cinzel:wght@700&display=swap');
+        
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        :root {
+            --bg-primary: #0f1419;
+            --bg-secondary: #1a2332;
+            --bg-card: #243447;
+            --accent-gold: #ffd700;
+            --accent-bronze: #cd7f32;
+            --text-primary: #e8eaed;
+            --text-secondary: #9aa0a6;
+            --border-color: #3d4f66;
+            --success: #4caf50;
+            --danger: #f44336;
+            --shadow-glow: 0 0 30px rgba(255, 215, 0, 0.3);
+        }
+
+        body {
+            font-family: 'Noto Sans SC', sans-serif;
+            background: linear-gradient(135deg, #0f1419 0%, #1a2332 50%, #243447 100%);
+            background-attachment: fixed;
+            color: var(--text-primary);
+            min-height: 100vh;
+            position: relative;
+            overflow-x: hidden;
+        }
+
+        body::before {
+            content: '';
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: radial-gradient(circle at 20% 50%, rgba(255, 215, 0, 0.05) 0%, transparent 50%),
+                        radial-gradient(circle at 80% 80%, rgba(205, 127, 50, 0.05) 0%, transparent 50%);
+            pointer-events: none;
+            z-index: 0;
+        }
+
+        .container {
+            position: relative;
+            z-index: 1;
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 20px;
+        }
+
+        /* 登录页面 */
+        .login-screen {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            min-height: 100vh;
+            padding: 40px 20px;
+        }
+
+        .game-title {
+            font-family: 'Cinzel', serif;
+            font-size: 3.5rem;
+            font-weight: 700;
+            text-align: center;
+            margin-bottom: 20px;
+            background: linear-gradient(135deg, var(--accent-gold) 0%, var(--accent-bronze) 100%);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+            text-shadow: 0 4px 20px rgba(255, 215, 0, 0.4);
+            animation: titleGlow 3s ease-in-out infinite;
+        }
+
+        @keyframes titleGlow {
+            0%, 100% { filter: brightness(1); }
+            50% { filter: brightness(1.2); }
+        }
+
+        .subtitle {
+            font-size: 1.2rem;
+            color: var(--text-secondary);
+            margin-bottom: 50px;
+            text-align: center;
+        }
+
+        .login-box {
+            background: var(--bg-card);
+            border: 2px solid var(--border-color);
+            border-radius: 20px;
+            padding: 40px;
+            width: 100%;
+            max-width: 500px;
+            box-shadow: 0 10px 40px rgba(0, 0, 0, 0.5);
+            animation: slideUp 0.6s ease-out;
+        }
+
+        @keyframes slideUp {
+            from {
+                opacity: 0;
+                transform: translateY(30px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        .input-group {
+            margin-bottom: 30px;
+        }
+
+        .input-group label {
+            display: block;
+            margin-bottom: 10px;
+            font-weight: 500;
+            color: var(--accent-gold);
+        }
+
+        .input-group input {
+            width: 100%;
+            padding: 15px;
+            background: var(--bg-secondary);
+            border: 2px solid var(--border-color);
+            border-radius: 10px;
+            color: var(--text-primary);
+            font-size: 1rem;
+            transition: all 0.3s;
+        }
+
+        .input-group input:focus {
+            outline: none;
+            border-color: var(--accent-gold);
+            box-shadow: 0 0 0 3px rgba(255, 215, 0, 0.1);
+        }
+
+        .btn {
+            width: 100%;
+            padding: 15px;
+            background: linear-gradient(135deg, var(--accent-gold) 0%, var(--accent-bronze) 100%);
+            border: none;
+            border-radius: 10px;
+            color: #000;
+            font-size: 1.1rem;
+            font-weight: 700;
+            cursor: pointer;
+            transition: all 0.3s;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+        }
+
+        .btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 8px 20px rgba(255, 215, 0, 0.4);
+        }
+
+        .btn:active {
+            transform: translateY(0);
+        }
+
+        .rules-toggle {
+            margin-top: 20px;
+            text-align: center;
+            color: var(--accent-gold);
+            cursor: pointer;
+            text-decoration: underline;
+            transition: color 0.3s;
+        }
+
+        .rules-toggle:hover {
+            color: var(--accent-bronze);
+        }
+
+        .rules-section {
+            margin-top: 30px;
+            padding: 30px;
+            background: var(--bg-secondary);
+            border-radius: 15px;
+            border-left: 4px solid var(--accent-gold);
+            max-height: 0;
+            overflow: hidden;
+            transition: max-height 0.5s ease-out, padding 0.5s ease-out;
+        }
+
+        .rules-section.show {
+            max-height: 1000px;
+            padding: 30px;
+        }
+
+        .rules-section h2 {
+            color: var(--accent-gold);
+            margin-bottom: 20px;
+            font-size: 1.5rem;
+        }
+
+        .rules-section ol {
+            padding-left: 20px;
+            line-height: 1.8;
+        }
+
+        .rules-section li {
+            margin-bottom: 15px;
+            color: var(--text-secondary);
+        }
+
+        .rules-section strong {
+            color: var(--text-primary);
+        }
+
+        /* 等候室 */
+        .lobby-screen {
+            display: none;
+            padding: 40px 20px;
+        }
+
+        .lobby-header {
+            text-align: center;
+            margin-bottom: 40px;
+        }
+
+        .lobby-header h1 {
+            font-family: 'Cinzel', serif;
+            font-size: 2.5rem;
+            color: var(--accent-gold);
+            margin-bottom: 10px;
+        }
+
+        .welcome-msg {
+            font-size: 1.2rem;
+            color: var(--text-secondary);
+        }
+
+        .welcome-msg .player-name {
+            color: var(--accent-gold);
+            font-weight: 700;
+        }
+
+        .coin-balance {
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+            background: var(--bg-card);
+            padding: 10px 20px;
+            border-radius: 25px;
+            margin-top: 10px;
+            border: 2px solid var(--accent-gold);
+        }
+
+        .coin-icon {
+            width: 24px;
+            height: 24px;
+            background: var(--accent-gold);
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-weight: 700;
+            color: #000;
+        }
+
+        .players-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(250px, 1fr));
+            gap: 20px;
+            margin-bottom: 30px;
+        }
+
+        .player-card {
+            background: var(--bg-card);
+            border: 2px solid var(--border-color);
+            border-radius: 15px;
+            padding: 25px;
+            cursor: pointer;
+            transition: all 0.3s;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .player-card::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            height: 4px;
+            background: linear-gradient(90deg, var(--accent-gold), var(--accent-bronze));
+            transform: scaleX(0);
+            transition: transform 0.3s;
+        }
+
+        .player-card:hover {
+            border-color: var(--accent-gold);
+            transform: translateY(-5px);
+            box-shadow: var(--shadow-glow);
+        }
+
+        .player-card:hover::before {
+            transform: scaleX(1);
+        }
+
+        .player-card.self {
+            border-color: var(--accent-gold);
+            background: linear-gradient(135deg, var(--bg-card) 0%, rgba(255, 215, 0, 0.05) 100%);
+            cursor: default;
+        }
+
+        .player-card.self:hover {
+            transform: none;
+        }
+
+        .player-info {
+            display: flex;
+            align-items: center;
+            gap: 15px;
+        }
+
+        .player-avatar {
+            width: 50px;
+            height: 50px;
+            background: linear-gradient(135deg, var(--accent-gold), var(--accent-bronze));
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 1.5rem;
+            font-weight: 700;
+            color: #000;
+        }
+
+        .player-name-display {
+            font-size: 1.2rem;
+            font-weight: 700;
+            color: var(--text-primary);
+        }
+
+        .player-status {
+            margin-top: 10px;
+            font-size: 0.9rem;
+            color: var(--text-secondary);
+        }
+
+        /* 游戏房间 */
+        .game-screen {
+            display: none;
+            padding: 20px;
+        }
+
+        .game-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 30px;
+            flex-wrap: wrap;
+            gap: 20px;
+        }
+
+        .game-status {
+            font-size: 1.3rem;
+            font-weight: 700;
+            color: var(--accent-gold);
+            text-align: center;
+            flex: 1;
+        }
+
+        .exit-btn {
+            padding: 10px 25px;
+            background: var(--danger);
+            border: none;
+            border-radius: 8px;
+            color: white;
+            font-weight: 700;
+            cursor: pointer;
+            transition: all 0.3s;
+        }
+
+        .exit-btn:hover {
+            background: #d32f2f;
+            transform: translateY(-2px);
+        }
+
+        .game-board {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 40px;
+            margin-bottom: 40px;
+        }
+
+        .player-area {
+            background: var(--bg-card);
+            border: 3px solid var(--border-color);
+            border-radius: 20px;
+            padding: 30px;
+            position: relative;
+        }
+
+        .player-area.active {
+            border-color: var(--accent-gold);
+            box-shadow: var(--shadow-glow);
+        }
+
+        .player-area.opponent {
+            opacity: 0.8;
+        }
+
+        .player-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 25px;
+            padding-bottom: 15px;
+            border-bottom: 2px solid var(--border-color);
+        }
+
+        .player-name-game {
+            font-size: 1.5rem;
+            font-weight: 700;
+            color: var(--accent-gold);
+        }
+
+        .coins-remaining {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            font-size: 1.8rem;
+            font-weight: 700;
+        }
+
+        .coins-display {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 8px;
+            margin-bottom: 25px;
+            min-height: 60px;
+        }
+
+        .coin-chip {
+            width: 40px;
+            height: 40px;
+            background: linear-gradient(135deg, var(--accent-gold), var(--accent-bronze));
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-weight: 700;
+            color: #000;
+            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.3);
+            animation: coinFloat 2s ease-in-out infinite;
+        }
+
+        .coin-chip:nth-child(even) {
+            animation-delay: 0.3s;
+        }
+
+        @keyframes coinFloat {
+            0%, 100% { transform: translateY(0); }
+            50% { transform: translateY(-5px); }
+        }
+
+        .hand-area {
+            position: relative;
+            height: 200px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .hand-palm {
+            width: 120px;
+            height: 150px;
+            background: linear-gradient(135deg, #f4a460 0%, #d2691e 100%);
+            border-radius: 60px 60px 20px 20px;
+            position: relative;
+            cursor: grab;
+            transition: all 0.3s;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            box-shadow: 0 8px 20px rgba(0, 0, 0, 0.4);
+        }
+
+        .hand-palm:active {
+            cursor: grabbing;
+        }
+
+        .hand-palm.dragging {
+            transform: scale(1.1);
+            cursor: grabbing;
+        }
+
+        .hand-palm.selected {
+            background: linear-gradient(135deg, #cd853f 0%, #8b4513 100%);
+        }
+
+        .hand-fist {
+            width: 100px;
+            height: 100px;
+            background: linear-gradient(135deg, #cd853f 0%, #8b4513 100%);
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 3rem;
+            box-shadow: 0 8px 20px rgba(0, 0, 0, 0.4);
+            animation: punchIn 0.5s ease-out;
+        }
+
+        @keyframes punchIn {
+            from {
+                transform: scale(0) rotate(-180deg);
+                opacity: 0;
+            }
+            to {
+                transform: scale(1) rotate(0);
+                opacity: 1;
+            }
+        }
+
+        .opponent-fist {
+            filter: grayscale(0.3);
+        }
+
+        .selection-menu {
+            position: absolute;
+            background: var(--bg-secondary);
+            border: 2px solid var(--accent-gold);
+            border-radius: 15px;
+            padding: 20px;
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.5);
+            z-index: 100;
+            animation: popIn 0.3s ease-out;
+        }
+
+        @keyframes popIn {
+            from {
+                transform: scale(0.8);
+                opacity: 0;
+            }
+            to {
+                transform: scale(1);
+                opacity: 1;
+            }
+        }
+
+        .selection-menu h3 {
+            color: var(--accent-gold);
+            margin-bottom: 15px;
+            font-size: 1.1rem;
+        }
+
+        .selection-options {
+            display: flex;
+            gap: 10px;
+        }
+
+        .selection-btn {
+            width: 60px;
+            height: 60px;
+            background: var(--bg-card);
+            border: 2px solid var(--border-color);
+            border-radius: 10px;
+            color: var(--text-primary);
+            font-size: 1.5rem;
+            font-weight: 700;
+            cursor: pointer;
+            transition: all 0.3s;
+        }
+
+        .selection-btn:hover:not(:disabled) {
+            border-color: var(--accent-gold);
+            background: var(--accent-gold);
+            color: #000;
+            transform: scale(1.1);
+        }
+
+        .selection-btn:disabled {
+            opacity: 0.3;
+            cursor: not-allowed;
+        }
+
+        .guess-menu {
+            position: fixed;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            background: var(--bg-secondary);
+            border: 3px solid var(--accent-gold);
+            border-radius: 20px;
+            padding: 40px;
+            box-shadow: 0 20px 60px rgba(0, 0, 0, 0.7);
+            z-index: 1000;
+            min-width: 400px;
+            animation: popIn 0.3s ease-out;
+        }
+
+        .guess-menu h3 {
+            color: var(--accent-gold);
+            margin-bottom: 25px;
+            font-size: 1.5rem;
+            text-align: center;
+        }
+
+        .guess-options {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 15px;
+        }
+
+        .guess-btn {
+            padding: 20px;
+            background: var(--bg-card);
+            border: 2px solid var(--border-color);
+            border-radius: 12px;
+            color: var(--text-primary);
+            font-size: 1.8rem;
+            font-weight: 700;
+            cursor: pointer;
+            transition: all 0.3s;
+        }
+
+        .guess-btn:hover {
+            border-color: var(--accent-gold);
+            background: var(--accent-gold);
+            color: #000;
+            transform: scale(1.05);
+        }
+
+        .result-overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: rgba(0, 0, 0, 0.9);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            z-index: 2000;
+            animation: fadeIn 0.3s;
+        }
+
+        @keyframes fadeIn {
+            from { opacity: 0; }
+            to { opacity: 1; }
+        }
+
+        .result-box {
+            background: var(--bg-card);
+            border: 3px solid var(--accent-gold);
+            border-radius: 25px;
+            padding: 50px;
+            text-align: center;
+            max-width: 500px;
+            animation: bounceIn 0.5s ease-out;
+        }
+
+        @keyframes bounceIn {
+            0% {
+                transform: scale(0.3);
+                opacity: 0;
+            }
+            50% {
+                transform: scale(1.05);
+            }
+            70% {
+                transform: scale(0.9);
+            }
+            100% {
+                transform: scale(1);
+                opacity: 1;
+            }
+        }
+
+        .result-icon {
+            font-size: 5rem;
+            margin-bottom: 20px;
+        }
+
+        .result-title {
+            font-size: 2.5rem;
+            font-weight: 700;
+            margin-bottom: 20px;
+            color: var(--accent-gold);
+        }
+
+        .result-message {
+            font-size: 1.2rem;
+            color: var(--text-secondary);
+            margin-bottom: 30px;
+        }
+
+        .result-actions {
+            display: flex;
+            gap: 15px;
+            justify-content: center;
+        }
+
+        .result-btn {
+            padding: 15px 30px;
+            border: none;
+            border-radius: 10px;
+            font-size: 1.1rem;
+            font-weight: 700;
+            cursor: pointer;
+            transition: all 0.3s;
+        }
+
+        .result-btn.primary {
+            background: linear-gradient(135deg, var(--accent-gold), var(--accent-bronze));
+            color: #000;
+        }
+
+        .result-btn.secondary {
+            background: var(--bg-secondary);
+            color: var(--text-primary);
+            border: 2px solid var(--border-color);
+        }
+
+        .result-btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 8px 20px rgba(0, 0, 0, 0.3);
+        }
+
+        .hidden {
+            display: none !important;
+        }
+
+        /* 响应式设计 */
+        @media (max-width: 768px) {
+            .game-title {
+                font-size: 2.5rem;
+            }
+
+            .game-board {
+                grid-template-columns: 1fr;
+                gap: 20px;
+            }
+
+            .guess-menu {
+                min-width: 90%;
+                padding: 30px 20px;
+            }
+
+            .guess-options {
+                grid-template-columns: repeat(2, 1fr);
+            }
+
+            .result-box {
+                padding: 30px 20px;
+                margin: 20px;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <!-- 登录页面 -->
+        <div class="login-screen" id="loginScreen">
+            <h1 class="game-title">猜硬币对决</h1>
+            <p class="subtitle">智慧与运气的较量</p>
+            
+            <div class="login-box">
+                <div class="input-group">
+                    <label for="playerName">请输入您的游戏昵称</label>
+                    <input type="text" id="playerName" placeholder="输入昵称（2-10个字符）" maxlength="10">
+                </div>
+                <button class="btn" onclick="login()">进入游戏大厅</button>
+                <div class="rules-toggle" onclick="toggleRules()">📜 查看游戏规则</div>
+            </div>
+
+            <div class="rules-section" id="rulesSection">
+                <h2>🎮 游戏规则说明书</h2>
+                <ol>
+                    <li><strong>游戏目标：</strong>通过猜测双方手中筹码总数赢得对手的筹码，直到对方筹码耗尽。</li>
+                    
+                    <li><strong>初始设置：</strong>每位玩家进入游戏后获得 <strong>10枚筹码</strong>。</li>
+                    
+                    <li><strong>开始游戏：</strong>
+                        <ul style="list-style-type: disc; margin-left: 20px; margin-top: 10px;">
+                            <li>进入大厅后，您的名字会显示在等待玩家列表中</li>
+                            <li>点击其他玩家的名字即可向其发起游戏邀请</li>
+                            <li>双方进入游戏房间后，先掷骰子决定谁先猜</li>
+                        </ul>
+                    </li>
+                    
+                    <li><strong>游戏流程：</strong>
+                        <ul style="list-style-type: disc; margin-left: 20px; margin-top: 10px;">
+                            <li>每回合，双方各自从剩余筹码中选择 1-3 枚握在手中</li>
+                            <li>用鼠标（或手指）拖拽手掌到筹码盒上，选择要出的筹码数量</li>
+                            <li>选好后会显示握拳动作，表示已准备好</li>
+                            <li>当双方都握拳后，由先猜的玩家猜测两人手中筹码总数（2-6枚）</li>
+                        </ul>
+                    </li>
+                    
+                    <li><strong>猜测规则（重要）：</strong>
+                        <ul style="list-style-type: disc; margin-left: 20px; margin-top: 10px;">
+                            <li><strong>先猜者猜中：</strong>直接赢得双方手中的全部筹码，本轮结束</li>
+                            <li><strong>先猜者猜错：</strong>只告知"猜错了"，<span style="color: #ffd700; font-weight: 700;">不透露实际总数</span>，轮到后猜者猜测</li>
+                            <li><strong>后猜者猜中：</strong>赢得双方手中的全部筹码，本轮结束</li>
+                            <li><strong>双方都猜错：</strong>公布实际总数和双方各自出了几枚，筹码归还各自筹码盒，重新开始新一轮</li>
+                        </ul>
+                    </li>
+                    
+                    <li><strong>胜负判定：</strong>
+                        <ul style="list-style-type: disc; margin-left: 20px; margin-top: 10px;">
+                            <li><strong>游戏结束条件：</strong>任意一方筹码耗尽，或某回合结束后有玩家选择退出</li>
+                            <li><strong>获胜者：</strong>拥有更多筹码的一方获胜</li>
+                        </ul>
+                    </li>
+                    
+                    <li><strong>重要规则：</strong>
+                        <ul style="list-style-type: disc; margin-left: 20px; margin-top: 10px;">
+                            <li>只能看到自己的剩余筹码数量，看不到对方的</li>
+                            <li><span style="color: #ffd700; font-weight: 700;">第一个人猜错时，绝不透露实际总数，保持游戏公平性</span></li>
+                            <li>不能在游戏进行中退出，只能在每回合结束后选择退出</li>
+                            <li>筹码数量不足3枚时，只能选择剩余数量范围内的筹码</li>
+                        </ul>
+                    </li>
+                </ol>
+            </div>
+        </div>
+
+        <!-- 等候室 -->
+        <div class="lobby-screen" id="lobbyScreen">
+            <div class="lobby-header">
+                <h1>游戏大厅</h1>
+                <div class="welcome-msg">
+                    欢迎，<span class="player-name" id="currentPlayerName"></span>！
+                    <div class="coin-balance">
+                        <span class="coin-icon">💰</span>
+                        <span id="lobbyCoins">10</span> 枚筹码
+                    </div>
+                </div>
+            </div>
+
+            <div class="players-grid" id="playersGrid">
+                <!-- 玩家卡片将动态生成 -->
+            </div>
+        </div>
+
+        <!-- 游戏房间 -->
+        <div class="game-screen" id="gameScreen">
+            <div class="game-header">
+                <button class="exit-btn" onclick="exitGame()">退出游戏</button>
+                <div class="game-status" id="gameStatus">等待对手...</div>
+            </div>
+
+            <div class="game-board">
+                <!-- 玩家区域 -->
+                <div class="player-area active" id="playerArea">
+                    <div class="player-header">
+                        <div class="player-name-game" id="playerNameGame"></div>
+                        <div class="coins-remaining">
+                            <span class="coin-icon">💰</span>
+                            <span id="playerCoins">10</span>
+                        </div>
+                    </div>
+                    <div class="coins-display" id="playerCoinsDisplay"></div>
+                    <div class="hand-area" id="playerHandArea">
+                        <div class="hand-palm" id="playerHand" draggable="true"></div>
+                    </div>
+                </div>
+
+                <!-- 对手区域 -->
+                <div class="player-area opponent" id="opponentArea">
+                    <div class="player-header">
+                        <div class="player-name-game" id="opponentNameGame"></div>
+                        <div class="coins-remaining">
+                            <span class="coin-icon">❓</span>
+                            <span id="opponentCoins">?</span>
+                        </div>
+                    </div>
+                    <div class="coins-display" id="opponentCoinsDisplay">
+                        <div style="color: var(--text-secondary); width: 100%; text-align: center;">对手筹码隐藏</div>
+                    </div>
+                    <div class="hand-area" id="opponentHandArea">
+                        <div class="hand-palm" id="opponentHand"></div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // 游戏状态管理
+        const gameState = {
+            currentPlayer: null,
+            players: [],
+            currentRoom: null,
+            playerCoins: 10,
+            opponentCoins: 10,
+            playerSelected: 0,
+            opponentSelected: 0,
+            playerReady: false,
+            opponentReady: false,
+            firstGuesser: null,
+            roundInProgress: false
+        };
+
+        // 模拟玩家数据存储
+        let onlinePlayers = [];
+
+        // 切换规则显示
+        function toggleRules() {
+            const rulesSection = document.getElementById('rulesSection');
+            rulesSection.classList.toggle('show');
+        }
+
+        // 登录功能
+        function login() {
+            const nameInput = document.getElementById('playerName');
+            const name = nameInput.value.trim();
+
+            if (name.length < 2 || name.length > 10) {
+                alert('昵称长度应为2-10个字符！');
+                return;
+            }
+
+            gameState.currentPlayer = {
+                id: Date.now(),
+                name: name,
+                coins: 10,
+                online: true
+            };
+
+            onlinePlayers.push(gameState.currentPlayer);
+            
+            document.getElementById('loginScreen').style.display = 'none';
+            document.getElementById('lobbyScreen').style.display = 'block';
+            document.getElementById('currentPlayerName').textContent = name;
+            
+            renderPlayersList();
+            
+            // 模拟其他在线玩家
+            setTimeout(() => {
+                addMockPlayers();
+            }, 1000);
+        }
+
+        // 添加模拟玩家
+        function addMockPlayers() {
+            const mockNames = ['龙剑客', '凤舞者', '虎将军', '熊猫侠'];
+            mockNames.forEach((name, index) => {
+                setTimeout(() => {
+                    const mockPlayer = {
+                        id: Date.now() + index + 1,
+                        name: name,
+                        coins: 10,
+                        online: true,
+                        isMock: true
+                    };
+                    onlinePlayers.push(mockPlayer);
+                    renderPlayersList();
+                }, index * 500);
+            });
+        }
+
+        // 渲染玩家列表
+        function renderPlayersList() {
+            const grid = document.getElementById('playersGrid');
+            grid.innerHTML = '';
+
+            onlinePlayers.forEach(player => {
+                const card = document.createElement('div');
+                card.className = 'player-card';
+                if (player.id === gameState.currentPlayer.id) {
+                    card.className += ' self';
+                }
+
+                const initial = player.name.charAt(0);
+                
+                card.innerHTML = `
+                    <div class="player-info">
+                        <div class="player-avatar">${initial}</div>
+                        <div>
+                            <div class="player-name-display">${player.name}</div>
+                            <div class="player-status">💰 ${player.coins} 枚筹码</div>
+                        </div>
+                    </div>
+                `;
+
+                if (player.id !== gameState.currentPlayer.id) {
+                    card.onclick = () => startGame(player);
+                }
+
+                grid.appendChild(card);
+            });
+        }
+
+        // 开始游戏
+        function startGame(opponent) {
+            gameState.currentRoom = {
+                player1: gameState.currentPlayer,
+                player2: opponent
+            };
+
+            // 掷骰子决定谁先猜
+            const dice1 = Math.floor(Math.random() * 6) + 1;
+            const dice2 = Math.floor(Math.random() * 6) + 1;
+            
+            gameState.firstGuesser = dice1 >= dice2 ? 'player' : 'opponent';
+            
+            // 重置游戏状态
+            gameState.playerCoins = 10;
+            gameState.opponentCoins = 10;
+            gameState.playerSelected = 0;
+            gameState.opponentSelected = 0;
+            gameState.playerReady = false;
+            gameState.opponentReady = false;
+
+            // 切换到游戏界面
+            document.getElementById('lobbyScreen').style.display = 'none';
+            document.getElementById('gameScreen').style.display = 'block';
+
+            document.getElementById('playerNameGame').textContent = gameState.currentPlayer.name;
+            document.getElementById('opponentNameGame').textContent = opponent.name;
+            
+            updateGameUI();
+            
+            const guesserName = gameState.firstGuesser === 'player' ? gameState.currentPlayer.name : opponent.name;
+            showStatus(`🎲 掷骰子结果：${guesserName} 先猜！`);
+            
+            setTimeout(() => {
+                showStatus('请选择要出的筹码数量');
+                setupDragAndDrop();
+            }, 2000);
+        }
+
+        // 更新游戏UI
+        function updateGameUI() {
+            document.getElementById('playerCoins').textContent = gameState.playerCoins;
+            
+            // 更新玩家筹码显示
+            const playerCoinsDisplay = document.getElementById('playerCoinsDisplay');
+            playerCoinsDisplay.innerHTML = '';
+            for (let i = 0; i < gameState.playerCoins; i++) {
+                const coin = document.createElement('div');
+                coin.className = 'coin-chip';
+                coin.textContent = '💰';
+                playerCoinsDisplay.appendChild(coin);
+            }
+
+            // 重置手势
+            if (!gameState.playerReady) {
+                document.getElementById('playerHandArea').innerHTML = '<div class="hand-palm" id="playerHand" draggable="true"></div>';
+                setupDragAndDrop();
+            }
+            
+            if (!gameState.opponentReady) {
+                document.getElementById('opponentHandArea').innerHTML = '<div class="hand-palm" id="opponentHand"></div>';
+            }
+        }
+
+        // 设置拖拽功能
+        function setupDragAndDrop() {
+            const hand = document.getElementById('playerHand');
+            const coinsDisplay = document.getElementById('playerCoinsDisplay');
+            
+            let isDragging = false;
+            let startX, startY;
+
+            hand.addEventListener('mousedown', startDrag);
+            hand.addEventListener('touchstart', startDrag);
+
+            function startDrag(e) {
+                if (gameState.playerReady) return;
+                
+                isDragging = true;
+                hand.classList.add('dragging');
+                
+                const touch = e.touches ? e.touches[0] : e;
+                startX = touch.clientX;
+                startY = touch.clientY;
+
+                document.addEventListener('mousemove', drag);
+                document.addEventListener('touchmove', drag);
+                document.addEventListener('mouseup', endDrag);
+                document.addEventListener('touchend', endDrag);
+            }
+
+            function drag(e) {
+                if (!isDragging) return;
+                
+                const touch = e.touches ? e.touches[0] : e;
+                const currentX = touch.clientX;
+                const currentY = touch.clientY;
+                
+                hand.style.transform = `translate(${currentX - startX}px, ${currentY - startY}px)`;
+            }
+
+            function endDrag(e) {
+                if (!isDragging) return;
+                
+                isDragging = false;
+                hand.classList.remove('dragging');
+                
+                document.removeEventListener('mousemove', drag);
+                document.removeEventListener('touchmove', drag);
+                document.removeEventListener('mouseup', endDrag);
+                document.removeEventListener('touchend', endDrag);
+
+                const touch = e.changedTouches ? e.changedTouches[0] : e;
+                const dropX = touch.clientX;
+                const dropY = touch.clientY;
+
+                const coinsRect = coinsDisplay.getBoundingClientRect();
+                
+                if (dropX >= coinsRect.left && dropX <= coinsRect.right &&
+                    dropY >= coinsRect.top && dropY <= coinsRect.bottom) {
+                    showSelectionMenu();
+                }
+
+                hand.style.transform = '';
+            }
+        }
+
+        // 显示选择菜单
+        function showSelectionMenu() {
+            const menu = document.createElement('div');
+            menu.className = 'selection-menu';
+            menu.style.left = '50%';
+            menu.style.top = '50%';
+            menu.style.transform = 'translate(-50%, -50%)';
+            
+            const maxCoins = Math.min(3, gameState.playerCoins);
+            
+            menu.innerHTML = `
+                <h3>你打算出几枚筹码？</h3>
+                <div class="selection-options">
+                    ${[1, 2, 3].map(num => `
+                        <button class="selection-btn" ${num > maxCoins ? 'disabled' : ''} 
+                                onclick="selectCoins(${num}, this.parentElement.parentElement)">
+                            ${num}
+                        </button>
+                    `).join('')}
+                </div>
+            `;
+            
+            document.getElementById('playerHandArea').appendChild(menu);
+        }
+
+        // 选择筹码数量
+        function selectCoins(count, menu) {
+            gameState.playerSelected = count;
+            gameState.playerReady = true;
+            
+            menu.remove();
+            
+            // 显示握拳
+            document.getElementById('playerHandArea').innerHTML = '<div class="hand-fist">✊</div>';
+            
+            showStatus('等待对手出拳...');
+            
+            // 模拟对手出拳
+            setTimeout(() => {
+                opponentMakeChoice();
+            }, 1500);
+        }
+
+        // 对手做选择
+        function opponentMakeChoice() {
+            const maxCoins = Math.min(3, gameState.opponentCoins);
+            gameState.opponentSelected = Math.floor(Math.random() * maxCoins) + 1;
+            gameState.opponentReady = true;
+            
+            document.getElementById('opponentHandArea').innerHTML = '<div class="hand-fist opponent-fist">✊</div>';
+            
+            showStatus('双方已准备！开始猜拳...');
+            
+            setTimeout(() => {
+                if (gameState.firstGuesser === 'player') {
+                    showGuessMenu();
+                } else {
+                    opponentGuess();
+                }
+            }, 1000);
+        }
+
+        // 显示猜测菜单
+        function showGuessMenu() {
+            const menu = document.createElement('div');
+            menu.className = 'guess-menu';
+            
+            menu.innerHTML = `
+                <h3>你打算猜总共有多少枚筹码？</h3>
+                <div class="guess-options">
+                    ${[2, 3, 4, 5, 6].map(num => `
+                        <button class="guess-btn" onclick="makeGuess(${num}, this.parentElement.parentElement)">
+                            ${num}
+                        </button>
+                    `).join('')}
+                </div>
+            `;
+            
+            document.body.appendChild(menu);
+        }
+
+        // 玩家猜测（第一次猜测）
+        function makeGuess(guess, menu) {
+            menu.remove();
+            
+            const total = gameState.playerSelected + gameState.opponentSelected;
+            const isCorrect = guess === total;
+            
+            showStatus(`你猜测总共有 ${guess} 枚筹码`);
+            
+            setTimeout(() => {
+                if (isCorrect) {
+                    // 猜对了，直接结束
+                    showResult(true, total, 'player', guess, null);
+                } else {
+                    // 猜错了，不透露实际数字！只说猜错了
+                    showStatus(`❌ 你猜错了！轮到 ${gameState.currentRoom.player2.name} 猜测...`);
+                    
+                    setTimeout(() => {
+                        opponentSecondGuess(guess, total);
+                    }, 2000);
+                }
+            }, 1000);
+        }
+
+        // 对手猜测（第一次猜测）
+        function opponentGuess() {
+            showStatus('对手正在思考...');
+            
+            setTimeout(() => {
+                const total = gameState.playerSelected + gameState.opponentSelected;
+                // 对手有30%概率猜中
+                const guess = Math.random() < 0.3 ? total : (Math.floor(Math.random() * 5) + 2);
+                const isCorrect = guess === total;
+                
+                // 显示对手的猜测
+                showStatus(`${gameState.currentRoom.player2.name} 猜测总共有 ${guess} 枚筹码`);
+                
+                setTimeout(() => {
+                    if (isCorrect) {
+                        // 猜对了，直接结束
+                        showResult(true, total, 'opponent', guess, null);
+                    } else {
+                        // 猜错了，不透露实际数字！只说猜错了
+                        showStatus(`❌ ${gameState.currentRoom.player2.name} 猜错了！轮到你猜测...`);
+                        
+                        setTimeout(() => {
+                            playerSecondGuess(guess, total);
+                        }, 2000);
+                    }
+                }, 1500);
+            }, 2000);
+        }
+
+        // 玩家第二次猜测机会
+        function playerSecondGuess(opponentFirstGuess, total) {
+            const menu = document.createElement('div');
+            menu.className = 'guess-menu';
+            
+            menu.innerHTML = `
+                <h3>${gameState.currentRoom.player2.name} 猜了 ${opponentFirstGuess} 枚但猜错了！<br>现在轮到你猜！</h3>
+                <div class="guess-options">
+                    ${[2, 3, 4, 5, 6].map(num => `
+                        <button class="guess-btn" onclick="makeSecondGuess(${num}, ${opponentFirstGuess}, ${total}, this.parentElement.parentElement)">
+                            ${num}
+                        </button>
+                    `).join('')}
+                </div>
+            `;
+            
+            document.body.appendChild(menu);
+        }
+
+        // 玩家第二次猜测
+        function makeSecondGuess(guess, opponentFirstGuess, total, menu) {
+            menu.remove();
+            
+            const isCorrect = guess === total;
+            
+            showStatus(`你猜测总共有 ${guess} 枚筹码`);
+            
+            setTimeout(() => {
+                showResult(isCorrect, total, 'player', opponentFirstGuess, guess);
+            }, 1000);
+        }
+
+        // 对手第二次猜测机会
+        function opponentSecondGuess(playerFirstGuess, total) {
+            showStatus(`${gameState.currentRoom.player2.name} 正在思考第二次猜测...`);
+            
+            setTimeout(() => {
+                // 对手第二次猜测，稍微提高概率到40%
+                const guess = Math.random() < 0.4 ? total : (Math.floor(Math.random() * 5) + 2);
+                const isCorrect = guess === total;
+                
+                showStatus(`${gameState.currentRoom.player2.name} 猜测总共有 ${guess} 枚筹码`);
+                
+                setTimeout(() => {
+                    showResult(isCorrect, total, 'opponent', playerFirstGuess, guess);
+                }, 1500);
+            }, 2000);
+        }
+
+        // 显示结果
+        function showResult(isCorrect, actualTotal, winner, firstGuess, secondGuess) {
+            const overlay = document.createElement('div');
+            overlay.className = 'result-overlay';
+            
+            let resultHTML = '';
+            
+            // 确定谁先猜谁后猜
+            let firstGuesserName, secondGuesserName, winnerGuess;
+            if (gameState.firstGuesser === 'player') {
+                firstGuesserName = gameState.currentPlayer.name;
+                secondGuesserName = gameState.currentRoom.player2.name;
+                if (secondGuess !== null && secondGuess !== undefined) {
+                    // 有第二次猜测
+                    winnerGuess = secondGuess;
+                } else {
+                    // 只有第一次猜测
+                    winnerGuess = firstGuess;
+                }
+            } else {
+                firstGuesserName = gameState.currentRoom.player2.name;
+                secondGuesserName = gameState.currentPlayer.name;
+                if (secondGuess !== null && secondGuess !== undefined) {
+                    // 有第二次猜测
+                    winnerGuess = secondGuess;
+                } else {
+                    // 只有第一次猜测
+                    winnerGuess = firstGuess;
+                }
+            }
+            
+            if (isCorrect) {
+                const winnerName = winner === 'player' ? gameState.currentPlayer.name : gameState.currentRoom.player2.name;
+                const coinsWon = gameState.playerSelected + gameState.opponentSelected;
+                
+                if (winner === 'player') {
+                    gameState.playerCoins += gameState.opponentSelected;
+                    gameState.opponentCoins -= gameState.opponentSelected;
+                } else {
+                    gameState.opponentCoins += gameState.playerSelected;
+                    gameState.playerCoins -= gameState.playerSelected;
+                }
+                
+                // 构建猜测过程说明
+                let guessProcess = '';
+                if (secondGuess !== null && secondGuess !== undefined) {
+                    // 两个人都猜了
+                    guessProcess = `
+                        ${firstGuesserName}（先猜）猜测：${firstGuess} 枚 ❌<br>
+                        ${secondGuesserName}（后猜）猜测：${secondGuess} 枚 ✅<br>
+                    `;
+                } else {
+                    // 只有第一个人猜中了
+                    guessProcess = `
+                        ${firstGuesserName}（先猜）猜测：${firstGuess} 枚 ✅<br>
+                    `;
+                }
+                
+                resultHTML = `
+                    <div class="result-box">
+                        <div class="result-icon">🎉</div>
+                        <div class="result-title">${winnerName} 猜中了！</div>
+                        <div class="result-message">
+                            ${guessProcess}
+                            <br>
+                            ${gameState.currentPlayer.name} 出了 ${gameState.playerSelected} 枚<br>
+                            ${gameState.currentRoom.player2.name} 出了 ${gameState.opponentSelected} 枚<br>
+                            <strong>实际总数：${actualTotal} 枚</strong><br><br>
+                            🏆 ${winnerName} 赢得 ${coinsWon} 枚筹码！
+                        </div>
+                        ${gameState.playerCoins === 0 || gameState.opponentCoins === 0 ? `
+                            <div class="result-actions">
+                                <button class="result-btn primary" onclick="returnToLobby()">返回大厅</button>
+                            </div>
+                        ` : `
+                            <div class="result-actions">
+                                <button class="result-btn primary" onclick="continueGame()">继续游戏</button>
+                                <button class="result-btn secondary" onclick="returnToLobby()">退出游戏</button>
+                            </div>
+                        `}
+                    </div>
+                `;
+            } else {
+                // 双方都没猜中
+                resultHTML = `
+                    <div class="result-box">
+                        <div class="result-icon">❌</div>
+                        <div class="result-title">双方都没猜中！</div>
+                        <div class="result-message">
+                            ${firstGuesserName}（先猜）猜测：${firstGuess} 枚 ❌<br>
+                            ${secondGuesserName}（后猜）猜测：${secondGuess} 枚 ❌<br>
+                            <br>
+                            ${gameState.currentPlayer.name} 出了 ${gameState.playerSelected} 枚<br>
+                            ${gameState.currentRoom.player2.name} 出了 ${gameState.opponentSelected} 枚<br>
+                            <strong>实际总数：${actualTotal} 枚</strong><br><br>
+                            筹码归还，重新开始
+                        </div>
+                        <div class="result-actions">
+                            <button class="result-btn primary" onclick="continueGame()">继续游戏</button>
+                            <button class="result-btn secondary" onclick="returnToLobby()">退出游戏</button>
+                        </div>
+                    </div>
+                `;
+            }
+            
+            overlay.innerHTML = resultHTML;
+            document.body.appendChild(overlay);
+            
+            // 检查游戏是否结束
+            if (gameState.playerCoins === 0) {
+                setTimeout(() => {
+                    alert('很遗憾，你输光了所有筹码！');
+                    returnToLobby();
+                }, 3000);
+            } else if (gameState.opponentCoins === 0) {
+                setTimeout(() => {
+                    alert('恭喜你赢得了全部筹码！');
+                    returnToLobby();
+                }, 3000);
+            }
+        }
+
+        // 继续游戏
+        function continueGame() {
+            document.querySelector('.result-overlay')?.remove();
+            
+            gameState.playerSelected = 0;
+            gameState.opponentSelected = 0;
+            gameState.playerReady = false;
+            gameState.opponentReady = false;
+            
+            updateGameUI();
+            showStatus('请选择要出的筹码数量');
+        }
+
+        // 退出游戏
+        function exitGame() {
+            if (gameState.roundInProgress) {
+                alert('游戏进行中不能退出，请等待本轮结束！');
+                return;
+            }
+            
+            if (confirm('确定要退出游戏吗？')) {
+                returnToLobby();
+            }
+        }
+
+        // 返回大厅
+        function returnToLobby() {
+            document.querySelector('.result-overlay')?.remove();
+            document.getElementById('gameScreen').style.display = 'none';
+            document.getElementById('lobbyScreen').style.display = 'block';
+            
+            // 更新当前玩家的筹码
+            gameState.currentPlayer.coins = gameState.playerCoins;
+            renderPlayersList();
+        }
+
+        // 显示状态信息
+        function showStatus(message) {
+            document.getElementById('gameStatus').textContent = message;
+        }
+    </script>
+</body>
+</html>
